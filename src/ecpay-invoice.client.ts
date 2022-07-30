@@ -25,7 +25,6 @@ export type RevokeInvoiceResult = {
 };
 
 export type InvoiceB2CProps = {
-  MerchantID: string;
   RelateNumber: string;
   CustomerID?: string;
   CustomerIdentifier?: string;
@@ -37,7 +36,7 @@ export type InvoiceB2CProps = {
   Print: "0" | "1";
   Donation: "0" | "1";
   LoveCode?: string;
-  CarrierType?: "1" | "2" | "3";
+  CarrierType?: "1" | "2" | "3" | '';
   CarrierNum?: string;
   TaxType?: "1" | "2" | "3" | "4" | "9";
   SpecialTaxType?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
