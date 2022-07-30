@@ -36,7 +36,7 @@ export type InvoiceB2CProps = {
   Print: "0" | "1";
   Donation: "0" | "1";
   LoveCode?: string;
-  CarrierType?: "1" | "2" | "3" | '';
+  CarrierType?: "1" | "2" | "3" | "";
   CarrierNum?: string;
   TaxType?: "1" | "2" | "3" | "4" | "9";
   SpecialTaxType?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -131,7 +131,9 @@ class EcpayInvoiceClient {
       RpHeader: data.RpHeader,
       TransCode: data.TransCode,
       TransMsg: data.TransMsg,
-      Data: this.decryptResponseData(data.Data) as IssueInvoiceResult,
+      Data: data.Data
+        ? (this.decryptResponseData(data.Data) as IssueInvoiceResult)
+        : null,
     };
   }
 
