@@ -94,10 +94,11 @@ class EcpayInvoiceClient {
       this.hashIV
     );
     decipher.setAutoPadding(false);
-    let decrypted = decipher.update(data, "hex", "base64");
-    decrypted += decipher.final("base64");
+    let decrypted = decipher.update(data, "base64", "utf8");
+    decrypted += decipher.final("utf8");
 
-    return JSON.parse(decrypted.replace(/[\x00-\x20]+/g, ""));
+    const decodedData = decodeURIComponent(decrypted).replace(/[\x00-\x20]+/g, "");
+    return JSON.parse(decodedData);
   }
 
   public async issueB2CInvoice(
