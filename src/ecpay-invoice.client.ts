@@ -1,67 +1,20 @@
 import axios from "axios";
 import crypto from "crypto";
-
-export type InvoiceResponse<T> = {
-  PlatformID?: string | null;
-  MerchantID: string;
-  RpHeader: {
-    Timestamp: number;
-  };
-  TransCode: number;
-  TransMsg: string;
-  Data: T | null;
-};
-export type IssueInvoiceResult = {
-  RtnCode: number;
-  RtnMsg: string;
-  InvoiceNo: string;
-  InvoiceDate: string;
-  RandomNumber: string;
-};
-export type RevokeInvoiceResult = {
-  RtnCode: number;
-  RtnMsg: string;
-  InvoiceNo: string;
-};
-
-export type InvoiceB2CProps = {
-  RelateNumber: string;
-  CustomerID?: string;
-  CustomerIdentifier?: string;
-  CustomerName?: string;
-  CustomerAddr?: string;
-  CustomerPhone?: string;
-  CustomerEmail?: string;
-  ClearanceMark?: "1" | "2";
-  Print: "0" | "1";
-  Donation: "0" | "1";
-  LoveCode?: string;
-  CarrierType?: "1" | "2" | "3" | "";
-  CarrierNum?: string;
-  TaxType?: "1" | "2" | "3" | "4" | "9";
-  SpecialTaxType?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-  SalesAmount?: number;
-  InvoiceRemark?: string;
-  InvType?: "07" | "08";
-  vat?: "0" | "1";
-  items: {
-    ItemSeq?: number;
-    ItemName: string;
-    ItemCount: number;
-    ItemWord: string;
-    ItemPrice: number;
-    ItemTaxType?: "1" | "2" | "3";
-    ItemAmount?: number;
-    ItemRemark?: string;
-  }[];
-};
+import {
+  EcpayResponse,
+  IssueB2CInvoiceParams,
+  IssueB2CInvoiceResult,
+  RevokeB2CInvoiceResult,
+  IssueB2CAllowanceParams,
+  IssueB2CAllowanceResult,
+  RevokeB2CAllowanceResult,
+} from ".";
 
 class EcpayInvoiceClient {
+  apiEndpoint: string;
   merchantId: string;
   hashKey: string;
   hashIV: string;
-  dryRun: boolean;
-  apiEndpoint: string;
 
   constructor(params: {
     merchantId?: string;
@@ -72,9 +25,8 @@ class EcpayInvoiceClient {
     this.merchantId = params.merchantId ?? "2000132";
     this.hashKey = params.hashKey ?? "ejCk326UnaZWKisg";
     this.hashIV = params.hashIV ?? "q9jcZX8Ib9LM8wYk";
-    this.dryRun = params.env ? params.env === "sandbox" : true;
 
-    this.apiEndpoint = this.dryRun
+    this.apiEndpoint = (params.env ? params.env === "sandbox" : true)
       ? "https://einvoice-stage.ecpay.com.tw"
       : "https://einvoice.ecpay.com.tw";
   }
@@ -97,32 +49,94 @@ class EcpayInvoiceClient {
     let decrypted = decipher.update(data, "base64", "utf8");
     decrypted += decipher.final("utf8");
 
-    const decodedData = decodeURIComponent(decrypted).replace(/[\x00-\x20]+/g, "");
+    const decodedData = decodeURIComponent(decrypted).replace(
+      /[\x00-\x20]+/g,
+      ""
+    );
     return JSON.parse(decodedData);
   }
 
   public async issueB2CInvoice(
-    params: InvoiceB2CProps
-  ): Promise<InvoiceResponse<IssueInvoiceResult>> {
-    const invoiceData: InvoiceB2CProps = {
+    params: IssueB2CInvoiceParams
+  ): Promise<EcpayResponse<IssueB2CInvoiceResult>> {
+    const { Items, ...rest } = params;
+
+    return this.queryB2CApi("/B2CInvoice/Issue", {
       TaxType: "1",
       InvType: "07",
       vat: "1",
-      ...params,
-    };
-    const { items, ...rest } = invoiceData;
+      ...rest,
+      SalesAmount:
+        rest.SalesAmount ??
+        Items.reduce(
+          (acc, item) =>
+            acc + (item.ItemAmount ?? item.ItemPrice * item.ItemCount),
+          0
+        ),
+      Items: Items.map((item) => {
+        return {
+          ...item,
+          ItemAmount: item.ItemAmount ?? item.ItemPrice * item.ItemCount,
+        };
+      }),
+    });
+  }
 
-    const { data } = await axios.post(`${this.apiEndpoint}/B2CInvoice/Issue`, {
+  public async revokeB2CInvoice(
+    InvoiceNo: string,
+    InvoiceDate: string,
+    Reason = ""
+  ): Promise<EcpayResponse<RevokeB2CInvoiceResult>> {
+    return this.queryB2CApi("/B2CInvoice/Invalid", {
+      InvoiceNo,
+      InvoiceDate,
+      Reason,
+    });
+  }
+
+  public async issueB2CAllowance(
+    params: IssueB2CAllowanceParams
+  ): Promise<EcpayResponse<IssueB2CAllowanceResult>> {
+    const { Items, ...rest } = params;
+
+    return this.queryB2CApi("/B2CInvoice/Allowance", {
+      ...rest,
+      AllowanceAmount: Items.reduce(
+        (acc, item) =>
+          acc + (item.ItemAmount ?? item.ItemPrice * item.ItemCount),
+        0
+      ),
+      Items: Items.map((item) => {
+        return {
+          ...item,
+          ItemAmount: item.ItemAmount ?? item.ItemPrice * item.ItemCount,
+        };
+      }),
+    });
+  }
+
+  public async revokeB2CAllowance(
+    InvoiceNo: string,
+    AllowanceNo: string,
+    Reason = ""
+  ): Promise<EcpayResponse<RevokeB2CAllowanceResult>> {
+    return this.queryB2CApi("/B2CInvoice/AllowanceInvalid", {
+      InvoiceNo,
+      AllowanceNo,
+      Reason,
+    });
+  }
+
+  private async queryB2CApi(
+    path: string,
+    params: { [key: string]: any }
+  ): Promise<EcpayResponse<any>> {
+    const { data } = await axios.post(`${this.apiEndpoint}${path}`, {
       MerchantID: this.merchantId,
       RqHeader: { Timestamp: Math.floor(new Date().getTime() / 1000) },
       Data: this.encryptPostData({
-        ...rest,
-        items: items.map((item) => {
-          return {
-            ...item,
-            ItemAmount: item.ItemAmount ?? item.ItemPrice * item.ItemCount,
-          };
-        }),
+        MerchantID: this.merchantId,
+        ...params,
       }),
     });
 
@@ -132,37 +146,7 @@ class EcpayInvoiceClient {
       RpHeader: data.RpHeader,
       TransCode: data.TransCode,
       TransMsg: data.TransMsg,
-      Data: data.Data
-        ? (this.decryptResponseData(data.Data) as IssueInvoiceResult)
-        : null,
-    };
-  }
-
-  public async revokeB2CInvoice(
-    InvoiceNumber: string,
-    InvoiceDate: string,
-    InvalidReason = ""
-  ): Promise<InvoiceResponse<RevokeInvoiceResult>> {
-    const { data } = await axios.post(
-      `${this.apiEndpoint}/B2CInvoice/Invalid`,
-      {
-        MerchantID: this.merchantId,
-        RqHeader: { Timestamp: Math.floor(new Date().getTime() / 1000) },
-        Data: this.encryptPostData({
-          MerchantID: this.merchantId,
-          InvoiceNo: InvoiceNumber,
-          InvoiceDate,
-          Reason: InvalidReason,
-        }),
-      }
-    );
-    return {
-      PlatformID: data.PlatformID ?? null,
-      MerchantID: data.MerchantID,
-      RpHeader: data.RpHeader,
-      TransCode: data.TransCode,
-      TransMsg: data.TransMsg,
-      Data: this.decryptResponseData(data.Data) as RevokeInvoiceResult,
+      Data: data.Data ? this.decryptResponseData(data.Data) : null,
     };
   }
 }

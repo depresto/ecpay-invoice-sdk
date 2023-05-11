@@ -1,6 +1,6 @@
 {
   "name": "ecpay-invoice-sdk",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "綠界發票 SDK",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",

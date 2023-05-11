@@ -36,7 +36,7 @@ const client = new EcpayInvoiceClient({
 
 ### Issue B2C invoice
 
-詳情請見官方文件：[文件網址](https://www.ecpay.com.tw/Content/files/ecpay_004.pdf)
+詳情請見官方文件：[文件網址](https://developers.ecpay.com.tw/?p=7809)
 
 ```javascript
 await client.issueB2CInvoice({
@@ -46,12 +46,34 @@ await client.issueB2CInvoice({
 
 ## Revoke B2C invoice
 
-詳情請見官方文件：[文件網址](https://www.ecpay.com.tw/Content/files/ecpay_004.pdf)
+詳情請見官方文件：[文件網址](https://developers.ecpay.com.tw/?p=7809)
 
 ```javascript
 await client.revokeB2CInvoice(
   "AA123456",       // 發票號碼
   "YYYY-MM-DD",     // 發票開立日期
+  "invoke reason"   // 作廢原因
+);
+```
+
+### Issue B2C Allowance
+
+詳情請見官方文件：[文件網址](https://developers.ecpay.com.tw/?p=7809)
+
+```javascript
+await client.issueB2CAllowance({
+
+});
+```
+
+## Revoke B2C Allowance
+
+詳情請見官方文件：[文件網址](https://developers.ecpay.com.tw/?p=7809)
+
+```javascript
+await client.revokeB2CAllowance(
+  "AA123456",       // 發票號碼
+  "2016022615195209",     // 折讓號
   "invoke reason"   // 作廢原因
 );
 ```
