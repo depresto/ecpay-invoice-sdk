@@ -1,4 +1,5 @@
-# ECPay Invoice SDK
+# ECPay Invoice SDK [![CI](https://github.com/depresto/ecpay-invoice-sdk/workflows/CI/badge.svg)](https://github.com/depresto/ecpay-invoice-sdk/actions?query=workflow%3ACI) [![codecov](https://badgen.net/codecov/c/github/depresto/ecpay-invoice-sdk)](https://codecov.io/gh/depresto/ecpay-invoice-sdk)
+
 
 綠界發票 SDK
 
