@@ -17,18 +17,19 @@ class EcpayInvoiceClient {
   hashIV: string;
 
   constructor(params: {
-    merchantId?: string;
-    hashKey?: string;
-    hashIV?: string;
-    env?: "sandbox" | "production";
+    merchantId: string;
+    hashKey: string;
+    hashIV: string;
+    env: "sandbox" | "production";
   }) {
-    this.merchantId = params.merchantId ?? "2000132";
-    this.hashKey = params.hashKey ?? "ejCk326UnaZWKisg";
-    this.hashIV = params.hashIV ?? "q9jcZX8Ib9LM8wYk";
+    this.merchantId = params.merchantId;
+    this.hashKey = params.hashKey;
+    this.hashIV = params.hashIV;
 
-    this.apiEndpoint = (params.env ? params.env === "sandbox" : true)
-      ? "https://einvoice-stage.ecpay.com.tw"
-      : "https://einvoice.ecpay.com.tw";
+    this.apiEndpoint =
+      params.env === "sandbox"
+        ? "https://einvoice-stage.ecpay.com.tw"
+        : "https://einvoice.ecpay.com.tw";
   }
 
   private encryptPostData(params: { [key: string]: any }) {
@@ -85,7 +86,7 @@ class EcpayInvoiceClient {
   public async revokeB2CInvoice(
     InvoiceNo: string,
     InvoiceDate: string,
-    Reason = ""
+    Reason: string
   ): Promise<EcpayResponse<RevokeB2CInvoiceResult>> {
     return this.queryB2CApi("/B2CInvoice/Invalid", {
       InvoiceNo,
@@ -118,7 +119,7 @@ class EcpayInvoiceClient {
   public async revokeB2CAllowance(
     InvoiceNo: string,
     AllowanceNo: string,
-    Reason = ""
+    Reason: string
   ): Promise<EcpayResponse<RevokeB2CAllowanceResult>> {
     return this.queryB2CApi("/B2CInvoice/AllowanceInvalid", {
       InvoiceNo,
